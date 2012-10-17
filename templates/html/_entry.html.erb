@@ -1,0 +1,69 @@
+<tr class="narr_tr">
+  
+  <td><%if entry.negationInd %><b>Not Done: </b><% end %><%= entry.description %></td>
+  <td>
+    <% entry.codes.each do |set, codes| %>
+      <b>
+        <% if concept_map %>
+          <span onmouseover="showConcepts(event,'<%=entry.id%>_<%=set%>')" onmouseout="hideConcepts(event,'<%=entry.id%>_<%=set%>')" style="cursor: pointer;"><%=set %>: <%= codes.join(',') %></span>
+        <% else %>
+          <%=set %>: <%= codes.join(',') %>
+        <% end %>
+      </b>
+      <br/>
+      <% if concept_map %>
+        <%
+          matches = []
+          codes.each do |code| 
+            matches.concat(concept_map[set][code].values)
+          end
+        %>
+        <ul id="<%=entry.id%>_<%=set%>" style="display: none; position: absolute; background: #EEE; padding: 10px; padding-left: 30px; width: 600px; z-index: 3000;">
+          <% matches.each do |concept_match| %>
+            <li><%= concept_match[:concept].titleize %> (<%= concept_match[:oid]%>)</li>
+          <% end %>
+        </ul>
+      <% end %>
+    <% end %>
+  </td>
+  <td><%= entry.times_to_s %></td>
+  <td><%= decode_qrda_status(entry.status, entry.oid) %></td>   
+  <td>
+    <% entry.values.each do |value| %>
+      <% if value.respond_to? :scalar %>
+        <% units = value.try(:units) if(value.respond_to?(:units)) %>
+        <%= value.try(:scalar) %> <%= units %><br/>
+      <% elsif value.respond_to? :codes %>
+        <% value.codes.each do |system, vals| %>
+          <%= system %>: <%= vals.join(',') %><br/>
+        <% end %>
+      <% else %>
+        UNKNOWN VALUE
+      <% end %>
+    <% end %>
+  </td>
+  <td>
+	  <%
+      fields = entry.attributes.keys.reject {|key| ['codes', 'time', 'description', 'mood_code', 'values', '_id', '_type', 'start_time', 'end_time', 'status_code', 'negationInd', 'negationReason', 'oid'].include? key}
+      fields.concat entry.embedded_relations.keys.reject {|key| ['values'].include? key} if entry.embedded_relations?
+	    fields.each do |field|
+        value = entry.send(field)
+        next unless value.present?
+        value = ThingWithCodes.convert_codes_to_s(value.codes) rescue value.to_s
+    %>
+        <%= field %>: (<b><%= value %></b>)
+    <%
+      end
+      if entry.negationInd 
+	      negation_reason = ''
+	      if entry.negationReason
+          negation_reason = ThingWithCodes.convert_codes_to_s(entry.negationReason) rescue entry.negationReason.to_s
+        end
+	  %>
+        negation: <%= negation_reason %>
+    <%
+      end
+    %>
+	</td>
+
+</tr>

@@ -14,6 +14,9 @@ FactoryGirl.define do
     f.end_time        1270776601
     f.description     "Tobacco user"
     f.type            "404684003"
+    f.sequence :oid do |n|
+      "1.2.3.#{n}"
+    end
   end
 
   factory :encounter do |f|
@@ -24,6 +27,9 @@ FactoryGirl.define do
     f.discharge_disposition {{"SNOMED-CT" => ["23456789"]}}
     f.free_text       "Sample Encounter"
     f.facility { FactoryGirl.build(:organization) }
+    f.sequence :oid do |n|
+      "1.2.3.#{n}"
+    end
   end
   
   factory :entry do |f|
@@ -113,7 +119,7 @@ FactoryGirl.define do
     f.start_time 1267332332
     f.end_time 1267333332
     f.administrationTiming { {:institution_specified => true, :period => {"value" => 5.0, "unit" => "hours"}} }
-    f.dose { FactoryGirl.build(:physical_quantity_result_value) }
+    f.dose { FactoryGirl.build(:physical_quantity_result_value).attributes }
     f.status "complete"
     f.typeOfMedication { {"RxNorm" => ["12345"]}}
     f.statusOfMedication { {"RxNorm" => ["12345"]}}
@@ -148,6 +154,11 @@ FactoryGirl.define do
 
   factory :record do |f|
     f.encounters { |e| [FactoryGirl.build(:encounter)]}
+  end
+
+  factory 'bigger_record', class: Record do |f|
+    f.encounters { |e| FactoryGirl.build_list(:encounter, 3)}
+    f.conditions { |c| FactoryGirl.build_list(:condition, 3)}
   end
 
   factory :vital_sign do |f|
